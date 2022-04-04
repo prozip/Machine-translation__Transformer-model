@@ -137,7 +137,7 @@ if __name__ == "__main__":
         print('Latest checkpoint restored!!')
 
     # Training
-    EPOCHS = 5
+    EPOCHS = 50
     train_step_signature = [
         tf.TensorSpec(shape=(None, None), dtype=tf.int64),
         tf.TensorSpec(shape=(None, None), dtype=tf.int64),
