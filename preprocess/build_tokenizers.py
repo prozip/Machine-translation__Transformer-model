@@ -1,8 +1,10 @@
 from tensorflow_text.tools.wordpiece_vocab import bert_vocab_from_dataset as bert_vocab
 import tensorflow_text as text
 import tensorflow as tf
+import pathlib
+import re, os
 
-
+reserved_tokens = ["[PAD]", "[UNK]", "[START]", "[END]"]
 START = tf.argmax(tf.constant(reserved_tokens) == "[START]")
 END = tf.argmax(tf.constant(reserved_tokens) == "[END]")
 
@@ -12,6 +14,20 @@ def add_start_end(ragged):
     starts = tf.fill([count, 1], START)
     ends = tf.fill([count, 1], END)
     return tf.concat([starts, ragged, ends], axis=1)
+
+
+def cleanup_text(reserved_tokens, token_txt):
+    # Drop the reserved tokens, except for "[UNK]".
+    bad_tokens = [re.escape(tok) for tok in reserved_tokens if tok != "[UNK]"]
+    bad_token_re = "|".join(bad_tokens)
+
+    bad_cells = tf.strings.regex_full_match(token_txt, bad_token_re)
+    result = tf.ragged.boolean_mask(token_txt, ~bad_cells)
+
+    # Join them into strings.
+    result = tf.strings.reduce_join(result, separator=' ', axis=-1)
+
+    return result
 
 
 def write_vocab_file(filepath, vocab):
@@ -83,13 +99,12 @@ class CustomTokenizer(tf.Module):
         return tf.constant(self._reserved_tokens)
 
 
-def build(train_examples):
+def gen_vocab(train_examples):
 
     train_en = train_examples.map(lambda pt, en: en)
     train_pt = train_examples.map(lambda pt, en: pt)
 
     bert_tokenizer_params = dict(lower_case=True)
-    reserved_tokens = ["[PAD]", "[UNK]", "[START]", "[END]"]
 
     bert_vocab_args = dict(
         # The target vocabulary size
@@ -114,12 +129,15 @@ def build(train_examples):
     )
     write_vocab_file('en_vocab.txt', en_vocab)
 
-    pt_tokenizer = text.BertTokenizer('pt_vocab.txt', **bert_tokenizer_params)
-    en_tokenizer = text.BertTokenizer('en_vocab.txt', **bert_tokenizer_params)
+def build(train_examples):
+
+    # generate vocab and save to txt file
+    gen_vocab(train_examples)
 
     tokenizers = tf.Module()
     tokenizers.pt = CustomTokenizer(reserved_tokens, 'pt_vocab.txt')
     tokenizers.en = CustomTokenizer(reserved_tokens, 'en_vocab.txt')
 
-    model_name = 'ted_hrlr_translate_pt_en_converter'
+    model_name = 'converter'
     tf.saved_model.save(tokenizers, model_name)
+

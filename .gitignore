@@ -1,0 +1,7 @@
+github_token
+
+en_vocab.txt
+pt_vocab.txt
+
+__pycache__/
+test.py
