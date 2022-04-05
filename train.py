@@ -6,6 +6,8 @@ from data.download import load
 from preprocess.build_tokenizers import build
 from preprocess.my_tokenizer import MyTokenizer
 from model.transformer import Transformer
+from hyper_para import HyperParameter
+from model.optimizer import getOptimizer
 
 DATASETS_PATH = 'ted_hrlr_translate/pt_to_en'
 CONVERTER_MODEL_PATH = 'converter_model'
@@ -102,16 +104,11 @@ if __name__ == "__main__":
 
     train_batches = make_batches(train_examples, tokenizers)
 
-    # Hyperparamenter
-    num_layers = 4
-    d_model = 128
-    dff = 512
-    num_heads = 8
-    dropout_rate = 0.1
+    # Hyperparameter
+    hpara = HyperParameter()
+    num_layers, d_model, dff, num_heads, dropout_rate = hpara.para
 
-    learning_rate = CustomSchedule(d_model)
-    optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98,
-                                         epsilon=1e-9)
+    optimizer = getOptimizer(d_model)
 
     # model
     transformer = Transformer(
@@ -166,7 +163,7 @@ if __name__ == "__main__":
         train_loss.reset_states()
         train_accuracy.reset_states()
 
-        # inp -> portuguese, tar -> english
+        # input -> portuguese, target -> english
         for (batch, (inp, tar)) in enumerate(train_batches):
             train_step(inp, tar)
 
