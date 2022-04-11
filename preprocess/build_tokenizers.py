@@ -7,7 +7,8 @@ import re, os
 reserved_tokens = ["[PAD]", "[UNK]", "[START]", "[END]"]
 START = tf.argmax(tf.constant(reserved_tokens) == "[START]")
 END = tf.argmax(tf.constant(reserved_tokens) == "[END]")
-
+INPUT_PATH = 'pt_vocab.txt'
+TARGET_PATH = 'en_vocab.txt'
 
 def add_start_end(ragged):
     count = ragged.bounding_shape()[0]
@@ -42,7 +43,7 @@ class CustomTokenizer(tf.Module):
         self._reserved_tokens = reserved_tokens
         self._vocab_path = tf.saved_model.Asset(vocab_path)
 
-        vocab = pathlib.Path(vocab_path).read_text().splitlines()
+        vocab = pathlib.Path(vocab_path).read_text('utf-8').splitlines()
         self.vocab = tf.Variable(vocab)
 
         # Create the signatures for export:
@@ -121,23 +122,27 @@ def gen_vocab(train_examples):
         train_pt.batch(1000).prefetch(2),
         **bert_vocab_args
     )
-    write_vocab_file('pt_vocab.txt', pt_vocab)
+    write_vocab_file(INPUT_PATH, pt_vocab)
 
     en_vocab = bert_vocab.bert_vocab_from_dataset(
         train_en.batch(1000).prefetch(2),
         **bert_vocab_args
     )
-    write_vocab_file('en_vocab.txt', en_vocab)
+    write_vocab_file(TARGET_PATH, en_vocab)
 
-def build(train_examples):
+def build(train_examples, name):
 
     # generate vocab and save to txt file
-    gen_vocab(train_examples)
+    if (os.path.exists(TARGET_PATH) & os.path.exists(INPUT_PATH)):
+        print('Found vocab file')
+    else:
+        print('Generating vocab')
+        gen_vocab(train_examples)
 
     tokenizers = tf.Module()
-    tokenizers.pt = CustomTokenizer(reserved_tokens, 'pt_vocab.txt')
-    tokenizers.en = CustomTokenizer(reserved_tokens, 'en_vocab.txt')
+    tokenizers.pt = CustomTokenizer(reserved_tokens, INPUT_PATH)
+    tokenizers.en = CustomTokenizer(reserved_tokens, TARGET_PATH)
 
-    model_name = 'converter'
+    model_name = 'converter_saved/' + name
     tf.saved_model.save(tokenizers, model_name)
 

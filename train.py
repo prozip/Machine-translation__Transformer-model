@@ -1,16 +1,15 @@
 import os, time
 import tensorflow as tf
+import argparse
 
-
-from data.download import load
+from data.getDS import load
 from preprocess.build_tokenizers import build
 from preprocess.my_tokenizer import MyTokenizer
 from model.transformer import Transformer
 from hyper_para import HyperParameter
 from model.optimizer import getOptimizer
 
-DATASETS_PATH = 'ted_hrlr_translate/pt_to_en'
-CONVERTER_MODEL_PATH = 'converter_model'
+CONVERTER_SAVED_PATH = 'converter_saved'
 MAX_TOKENS = 128
 
 BUFFER_SIZE = 20000
@@ -18,7 +17,6 @@ BATCH_SIZE = 64
 
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
     from_logits=True, reduction='none')
-
 
 def loss_function(real, pred):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
@@ -41,31 +39,29 @@ def accuracy_function(real, pred):
     return tf.reduce_sum(accuracies)/tf.reduce_sum(mask)
 
 
-def preprocess(train_examples):
-    if os.path.isdir(CONVERTER_MODEL_PATH):
+def preprocess(train_examples, name):
+    if os.path.isdir(CONVERTER_SAVED_PATH + '/' + name):
         print("use existed converter model")
     else:
         print("build new converter model")
-        build(train_examples)
+        build(train_examples, name)
 
 
-def filter_max_tokens(pt, en):
-    num_tokens = tf.maximum(tf.shape(pt)[1], tf.shape(en)[1])
+def filter_max_tokens(inp, targ):
+    num_tokens = tf.maximum(tf.shape(inp)[1], tf.shape(targ)[1])
     return num_tokens < MAX_TOKENS
 
 
-
-
 def make_batches(ds, tokenizers):
-    def tokenize_pairs(pt, en):
-        pt = tokenizers.pt.tokenize(pt)
+    def tokenize_pairs(inp, targ):
+        inp = tokenizers.pt.tokenize(inp)
         # Convert from ragged to dense, padding with zeros.
-        pt = pt.to_tensor()
+        inp = inp.to_tensor()
 
-        en = tokenizers.en.tokenize(en)
+        targ = tokenizers.en.tokenize(targ)
         # Convert from ragged to dense, padding with zeros.
-        en = en.to_tensor()
-        return pt, en
+        targ = targ.to_tensor()
+        return inp, targ
     return (
         ds
         .cache()
@@ -95,11 +91,28 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
 if __name__ == "__main__":
 
-    # get or download datasets
-    train_examples = load(DATASETS_PATH)
+    # parse arguments
+    parser = argparse.ArgumentParser(description='Machine traslation with Transformer')
+    parser.add_argument("-t", "--type", choices=['local','tfds'], required=True,
+                        help="choose dataset type")
+    parser.add_argument('path',help="dataset path")
+    parser.add_argument("-e", "--epoch", type=int, required=True,
+                        help="training epoch")
+    args = parser.parse_args()
 
-    preprocess(train_examples)
-    myTokenizer = MyTokenizer(CONVERTER_MODEL_PATH)
+
+    # get dataset
+    # DATASETS_PATH = 'ted_hrlr_translate/pt_to_en'
+
+    if args.type == 'local':
+        train_examples = load("local", args.path)
+    else:
+        train_examples = load("tfds", args.path)
+        
+    name = os.path.basename(args.path).split('.')[0]
+
+    preprocess(train_examples, name)
+    myTokenizer = MyTokenizer(CONVERTER_SAVED_PATH + '/' + name)
     tokenizers = myTokenizer.tokenizers
 
     train_batches = make_batches(train_examples, tokenizers)
@@ -123,7 +136,7 @@ if __name__ == "__main__":
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.Mean(name='train_accuracy')
 
-    checkpoint_path = './checkpoints/train'
+    checkpoint_path = './checkpoints/' + name +'/train'
     ckpt = tf.train.Checkpoint(transformer=transformer,
                                optimizer=optimizer)
     ckpt_manager = tf.train.CheckpointManager(
@@ -134,7 +147,7 @@ if __name__ == "__main__":
         print('Latest checkpoint restored!!')
 
     # Training
-    EPOCHS = 50
+    EPOCHS = args.epoch
     train_step_signature = [
         tf.TensorSpec(shape=(None, None), dtype=tf.int64),
         tf.TensorSpec(shape=(None, None), dtype=tf.int64),

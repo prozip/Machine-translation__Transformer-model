@@ -7,7 +7,7 @@ from preprocess.my_tokenizer import MyTokenizer
 from hyper_para import HyperParameter
 from model.transformer import Transformer
 from model.optimizer import getOptimizer
-from train import CONVERTER_MODEL_PATH, MAX_TOKENS
+from train import CONVERTER_SAVED_PATH, MAX_TOKENS
 
 EXPORT_DIR = 'translator_model'
 
@@ -91,17 +91,19 @@ def print_translation(sentence, tokens):
 if __name__ == '__main__':
 
     # argument parser
-    my_parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='test the Translator class')
-    my_parser.add_argument('Input',
+    parser.add_argument("-m", "--model", required=True,
+                        help="choose model")
+    parser.add_argument('Input',
                            metavar='input_string',
                            type=str,
                            help='input sentense')
-    args = my_parser.parse_args()
+    args = parser.parse_args()
     sentence = args.Input
 
     # init
-    myTokenizer = MyTokenizer(CONVERTER_MODEL_PATH)
+    myTokenizer = MyTokenizer(CONVERTER_SAVED_PATH)
     tokenizers = myTokenizer.tokenizers
 
     # Hyperparameter
