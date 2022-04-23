@@ -103,7 +103,7 @@ if __name__ == '__main__':
     sentence = args.Input
 
     # init
-    myTokenizer = MyTokenizer(CONVERTER_SAVED_PATH)
+    myTokenizer = MyTokenizer(CONVERTER_SAVED_PATH + '/' + args.model)
     tokenizers = myTokenizer.tokenizers
 
     # Hyperparameter
@@ -122,7 +122,7 @@ if __name__ == '__main__':
         target_vocab_size=tokenizers.en.get_vocab_size().numpy(),
         rate=dropout_rate)
 
-    checkpoint_path = './checkpoints/train'
+    checkpoint_path = './checkpoints/' + args.model +'/train'
     ckpt = tf.train.Checkpoint(transformer=transformer,
                                optimizer=optimizer)
     ckpt_manager = tf.train.CheckpointManager(
@@ -143,3 +143,4 @@ if __name__ == '__main__':
         translated_text, translated_tokens, attention_weights = translator(
             tf.constant(sentence))
         print_translation(sentence, translated_text)
+    

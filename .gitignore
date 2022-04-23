@@ -1,7 +1,10 @@
 github_token
 
+/checkpoints
+
 /en_vocab.txt
 /pt_vocab.txt
+en_to_vi.txt
 
 __pycache__/
 test.py
