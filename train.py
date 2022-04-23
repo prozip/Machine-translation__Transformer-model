@@ -180,12 +180,18 @@ if __name__ == "__main__":
         for (batch, (inp, tar)) in enumerate(train_batches):
             train_step(inp, tar)
 
-            if batch % 50 == 0:
+            if batch % 100 == 0:
                 print(f'Epoch {epoch + 1} Batch {batch} Loss {train_loss.result():.4f} Accuracy {train_accuracy.result():.4f}')
 
+        # save every 5 epoch
         if (epoch + 1) % 5 == 0:
             ckpt_save_path = ckpt_manager.save()
             print(f'Saving checkpoint for epoch {epoch+1} at {ckpt_save_path}')
+
+        #always save
+        ckpt_save_path = ckpt_manager.save()
+        print(f'Saving checkpoint for epoch {epoch+1} at {ckpt_save_path}')
+
 
         print(f'Epoch {epoch + 1} Loss {train_loss.result():.4f} Accuracy {train_accuracy.result():.4f}')
 
