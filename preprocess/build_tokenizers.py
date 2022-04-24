@@ -32,7 +32,7 @@ def cleanup_text(reserved_tokens, token_txt):
 
 
 def write_vocab_file(filepath, vocab):
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding="utf-8") as f:
         for token in vocab:
             print(token, file=f)
 
