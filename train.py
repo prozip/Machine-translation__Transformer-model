@@ -184,9 +184,9 @@ if __name__ == "__main__":
                 print(f'Epoch {epoch + 1} Batch {batch} Loss {train_loss.result():.4f} Accuracy {train_accuracy.result():.4f}')
 
         # save every 5 epoch
-        if (epoch + 1) % 5 == 0:
-            ckpt_save_path = ckpt_manager.save()
-            print(f'Saving checkpoint for epoch {epoch+1} at {ckpt_save_path}')
+        # if (epoch + 1) % 5 == 0:
+        #     ckpt_save_path = ckpt_manager.save()
+        #     print(f'Saving checkpoint for epoch {epoch+1} at {ckpt_save_path}')
 
         #always save
         ckpt_save_path = ckpt_manager.save()
