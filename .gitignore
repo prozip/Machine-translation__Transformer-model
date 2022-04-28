@@ -7,5 +7,4 @@ github_token
 en_to_vi.txt
 
 __pycache__/
-test.py
-test.txt
+test.*

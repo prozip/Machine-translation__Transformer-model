@@ -105,7 +105,7 @@ def gen_vocab(train_examples):
     train_en = train_examples.map(lambda pt, en: en)
     train_pt = train_examples.map(lambda pt, en: pt)
 
-    bert_tokenizer_params = dict(lower_case=True)
+    bert_tokenizer_params = dict(lower_case=False)
 
     bert_vocab_args = dict(
         # The target vocabulary size
