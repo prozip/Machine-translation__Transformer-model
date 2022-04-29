@@ -39,7 +39,7 @@ def write_vocab_file(filepath, vocab):
 
 class CustomTokenizer(tf.Module):
     def __init__(self, reserved_tokens, vocab_path):
-        self.tokenizer = text.BertTokenizer(vocab_path, lower_case=True)
+        self.tokenizer = text.BertTokenizer(vocab_path, lower_case=False)
         self._reserved_tokens = reserved_tokens
         self._vocab_path = tf.saved_model.Asset(vocab_path)
 
