@@ -137,8 +137,8 @@ if __name__ == '__main__':
 
     if sentence == 'export':
         translator = ExportTranslator(translator)
-        tf.saved_model.save(translator, export_dir=EXPORT_DIR)
-        print('model saved to translator/')
+        tf.saved_model.save(translator, export_dir=EXPORT_DIR + '/' + args.model)
+        print('model saved to translator/' + args.model)
     else:
         translated_text, translated_tokens, attention_weights = translator(
             tf.constant(sentence))
